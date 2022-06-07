@@ -1,0 +1,4 @@
+pyspark>=3.2.1
+numpy
+elasticsearch
+pandas

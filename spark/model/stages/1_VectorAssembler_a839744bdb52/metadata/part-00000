@@ -1,0 +1,1 @@
+{"class":"org.apache.spark.ml.feature.VectorAssembler","timestamp":1654378224370,"sparkVersion":"3.2.1","uid":"VectorAssembler_a839744bdb52","paramMap":{"outputCol":"features","inputCols":["acc_mean","acc_min","acc_max","acc_stddev","gyro_mean","gyro_min","gyro_max","gyro_stddev"]},"defaultParamMap":{"outputCol":"VectorAssembler_a839744bdb52__output","handleInvalid":"error"}}
