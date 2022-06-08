@@ -1,8 +1,10 @@
 import imp
 from webbrowser import get
 from pyspark.sql import SparkSession
+from pyspark.conf import SparkConf
+from pyspark import SparkContext
 import pyspark.sql.types as tp
-from pyspark.sql.functions import from_json, col
+from pyspark.sql.functions import from_json, col, array
 from pyspark.ml import PipelineModel
 from pyspark.ml.feature import IndexToString
 from os import listdir
@@ -21,29 +23,25 @@ KAFKA_TOPIC = 'sensors'
 MODEL_PATH = '../tap/model'
 
 # elastic host and index
-ES_HOSTNAME = 'https://es01:9200'
+ES_HOSTNAME = 'http://elasticsearch:9200'
 ES_INDEX = 'sensors'
-
-
-es = Elasticsearch(
-    ES_HOSTNAME,
-    ca_certs="../tap/certs/ca/ca.crt",
-    basic_auth=("elastic", "progettotmda")
-    )
 
 
 # create dataframe schema
 def get_schema():
     schema = tp.StructType([
-        tp.StructField(name= 'user_id',       dataType= tp.IntegerType(),   nullable= True),
-        tp.StructField(name= 'acc_mean',       dataType= tp.DoubleType(),    nullable= True),
-        tp.StructField(name= 'acc_min',       dataType= tp.DoubleType(),    nullable= True),
-        tp.StructField(name= 'acc_max',       dataType= tp.DoubleType(),    nullable= True),
-        tp.StructField(name= 'acc_stddev',    dataType= tp.DoubleType(),    nullable= True),
+        tp.StructField(name= 'timestamp',       dataType= tp.TimestampType(), nullable= True),
+        tp.StructField(name= 'user_id',         dataType= tp.IntegerType(),   nullable= True),
+        tp.StructField(name= 'acc_mean',        dataType= tp.DoubleType(),    nullable= True),
+        tp.StructField(name= 'acc_min',         dataType= tp.DoubleType(),    nullable= True),
+        tp.StructField(name= 'acc_max',         dataType= tp.DoubleType(),    nullable= True),
+        tp.StructField(name= 'acc_stddev',      dataType= tp.DoubleType(),    nullable= True),
         tp.StructField(name= 'gyro_mean',       dataType= tp.DoubleType(),    nullable= True),
-        tp.StructField(name= 'gyro_min',       dataType= tp.DoubleType(),    nullable= True),
-        tp.StructField(name= 'gyro_max',       dataType= tp.DoubleType(),    nullable= True),
-        tp.StructField(name= 'gyro_stddev',    dataType= tp.DoubleType(),    nullable= True)
+        tp.StructField(name= 'gyro_min',        dataType= tp.DoubleType(),    nullable= True),
+        tp.StructField(name= 'gyro_max',        dataType= tp.DoubleType(),    nullable= True),
+        tp.StructField(name= 'gyro_stddev',     dataType= tp.DoubleType(),    nullable= True),
+        tp.StructField(name= 'latitude',        dataType= tp.DoubleType(),    nullable= True),
+        tp.StructField(name= 'longitude',       dataType= tp.DoubleType(),    nullable= True)
         ])
 
     return schema
@@ -51,10 +49,41 @@ def get_schema():
 
 # spark initialization
 def initialize_spark():
-    spark = SparkSession.builder.appName(APP_NAME).getOrCreate()
-    spark.sparkContext.setLogLevel("ERROR")
-    
+    sparkConf = SparkConf().set("es.nodes", "elasticsearch") \
+                            .set("es.port", "9200")
+
+    sc = SparkContext(appName=APP_NAME, conf=sparkConf)
+    spark = SparkSession(sc)
+    sc.setLogLevel("ERROR")
+
     return spark
+
+
+def create_index():
+    # define a mapping
+    es_mapping = {
+        "mappings": {
+            "properties": 
+                {
+                    "timestamp":{"type":"date"},
+                    "user_id": {"type": "integer"},
+                    "target": {"type": "text", "fielddata": True},
+                    "location": {"type": "geo_point"}
+                }
+        }
+    }
+    es = Elasticsearch(hosts=ES_HOSTNAME) 
+    # make an API call to the Elasticsearch cluster
+    # and have it return a response:
+    response = es.indices.create(
+        index=ES_INDEX,
+        body=es_mapping,
+        ignore=400 # ignore 400 already exists code
+    )
+    # check if the response was successful
+    if 'acknowledged' in response:
+        if response['acknowledged'] == True:
+            print ("INDEX MAPPING SUCCESS FOR INDEX:", response['index'])
 
 
 # read data from kafka
@@ -75,32 +104,21 @@ def read_from_kafka(spark):
     return df
 
 
-# when a batch of streaming data is ready 
-# it will be sent to es through this function.
-# This is called 'accrocco' (cit. Lemuel)
-def process_batch(batch_df, batch_id):
-    for idx, row in enumerate(batch_df.collect()):
-        row_dict = row.asDict()
-        id = f'{batch_id}-{idx}'
-        resp = es.index(
-            index=ES_INDEX, 
-            id=id, 
-            document=row_dict)
-        print(resp)
-
-
 # write to elasticsearch (in batch)
 def write_to_es(df):
     df.writeStream \
-        .foreach(process_batch) \
-        .start() \
+        .option("checkpointLocation", "/save/location") \
+        .format("es") \
+        .start(ES_INDEX) \
         .awaitTermination()
-
 
 def main():
 
     # spark initialization
     spark = initialize_spark()
+
+    # create es index and mapping
+    create_index()
 
     # read data from kafka
     df = read_from_kafka(spark)
@@ -119,10 +137,13 @@ def main():
     ind_str = IndexToString(inputCol='prediction', outputCol='target', labels=['Bus', 'Car', 'Train', 'Still', 'Walking'])
     df = ind_str.transform(df)
 
-    # remove features and other useless data
-    df = df.select('user_id', 'target')
+    # create a 'location' array. Needed to send a valid geo point to es 
+    df = df.withColumn('location', array(col('longitude'), col('latitude')))
 
-    # write data to elasticsearch
+    # remove features and other useless data
+    df = df.select('timestamp', 'user_id', 'target', 'location')
+
+    # Write the stream to elasticsearch
     write_to_es(df)
 
 

@@ -1,7 +1,8 @@
 import math
 from pyspark.sql import SparkSession
 import pyspark.sql.types as tp
-from pyspark.sql.functions import from_json, col, to_timestamp, session_window, udf, max, min, mean, stddev
+from pyspark.sql.functions import from_json, col, to_timestamp, session_window, udf, max, min, mean, stddev, first
+
 
 # spark app name
 APP_NAME = 'tmda_cleaning'
@@ -24,24 +25,27 @@ def get_schema():
         tp.StructField(name= 'gyro_x',      dataType= tp.StringType(),  nullable= True),
         tp.StructField(name= 'gyro_y',      dataType= tp.StringType(),  nullable= True),
         tp.StructField(name= 'gyro_z',      dataType= tp.StringType(),  nullable= True),
+        tp.StructField(name= 'latitude',    dataType= tp.StringType(),  nullable= True),
+        tp.StructField(name= 'longitude',   dataType= tp.StringType(),  nullable= True)
         ])
 
     return schema
 
 
-# convert 'user_id' string to integer
-# and sensors data from string to double
+# cast data to its real format
 def cast_data(df):
-    # convert event timestamp to the type Timestamp of spark 
-    df = df.withColumn("timestamp", col("timestamp").cast(tp.TimestampType()))
-    df = df.withColumn("user_id", col("user_id").cast(tp.IntegerType()))
-    df = df.withColumn("acc_x", col("acc_x").cast(tp.DoubleType()))
-    df = df.withColumn("acc_y", col("acc_y").cast(tp.DoubleType()))
-    df = df.withColumn("acc_z", col("acc_z").cast(tp.DoubleType()))
-    df = df.withColumn("gyro_x", col("gyro_x").cast(tp.DoubleType()))
-    df = df.withColumn("gyro_y", col("gyro_y").cast(tp.DoubleType()))
-    df = df.withColumn("gyro_z", col("gyro_z").cast(tp.DoubleType()))
-
+    df = df \
+        .withColumn("timestamp", col("timestamp").cast(tp.TimestampType())) \
+        .withColumn("user_id", col("user_id").cast(tp.IntegerType())) \
+        .withColumn("acc_x", col("acc_x").cast(tp.DoubleType())) \
+        .withColumn("acc_y", col("acc_y").cast(tp.DoubleType())) \
+        .withColumn("acc_z", col("acc_z").cast(tp.DoubleType())) \
+        .withColumn("gyro_x", col("gyro_x").cast(tp.DoubleType())) \
+        .withColumn("gyro_y", col("gyro_y").cast(tp.DoubleType())) \
+        .withColumn("gyro_z", col("gyro_z").cast(tp.DoubleType())) \
+        .withColumn("latitude", col("latitude").cast(tp.DoubleType())) \
+        .withColumn("longitude", col("longitude").cast(tp.DoubleType()))
+ 
     return df
 
 
@@ -96,10 +100,14 @@ def extract_features(df):
             mean('gyro').alias('gyro_mean'),
             min('gyro').alias('gyro_min'),
             max('gyro').alias('gyro_max'),
-            stddev('gyro').alias('gyro_stddev')) \
+            stddev('gyro').alias('gyro_stddev'),
+            first('latitude').alias('latitude'),
+            first('longitude').alias('longitude')) \
+        .withColumn('timestamp', col('session_window').getField('start')) \
         .na.fill(value=0)
     
     return df
+
 
 # write data to kafka
 def write_to_kafka(df):

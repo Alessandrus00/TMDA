@@ -55,7 +55,7 @@ def get_schema():
     return schema
 
 
-
+# create a clean dataset
 def create_clean_dataset():
 
     # if the refined dataset already exists return immediately
@@ -85,6 +85,7 @@ def create_clean_dataset():
     df.to_csv(CLEAN_DATASET_PATH, index=False)
 
 
+# spark initialization
 def initialize_spark():
 
     # spark session initializzation
@@ -97,6 +98,7 @@ def initialize_spark():
     return spark
 
 
+# read pre-cleaned dataset
 def read_dataset(spark):
 
     # get the schema
@@ -119,11 +121,10 @@ def create_pipeline(df):
     # spark needs features as a single vector
     asb = VectorAssembler(inputCols=FEATURES, outputCol='features')
 
-    # create random forest classifier
-    #rf = RandomForestClassifier(featuresCol= 'features', labelCol= 'target_index', numTrees=100)
-
+    # create a Gradient-Boosted Trees classifier (it's for binary tasks)
     gbt = GBTClassifier(featuresCol= 'features', labelCol= 'target_index', maxDepth=10, seed=1000)
 
+    # apply one-versus-rest to use gbt for non-binary tasks
     ovr = OneVsRest(featuresCol= 'features', labelCol= 'target_index', classifier=gbt)
 
     # create the pipeline
