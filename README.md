@@ -12,6 +12,6 @@ $ docker-compose up -d
 # 📊 Workflow 
 
 <p align="center">
-  <img src="./docs/workflow/WorkFlow.drawio.svg" alt="workflow" width=600/>
+  <img src="./docs/workflow/WorkFlow.drawio.svg" alt="workflow" width=700/>
 </p>
 
