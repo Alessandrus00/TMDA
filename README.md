@@ -54,4 +54,4 @@ Cleaning mainly consists in:
 http://cs.unibo.it/projects/us-tm2017/index.html
 
 # 🤵 Author
-[Alessadro Resta](https://github.com/Alessandrus00)
+[Alessandro Resta](https://github.com/Alessandrus00)
