@@ -36,6 +36,12 @@ Cleaning mainly consists in:
 
 8. Finally, a container named **kibana**, running the data visualization tool Kibana, provides an elegant dashboard, where data coming from Elasticsearch are represented through awsome charts. Remember to import `kibana/saved objects/kibana_objects.ndjson` to Kibana using the **import** button in the section **Stack Management > Saved Objects**.
 
+# 📈 Dashboard
+
+<p align="center">
+  <img src="./docs/img/kibana_dashboard.png" alt="dashboard"/>
+</p>
+
 # 👁 Peeking
 | Container     | URL                                             | Description                           |
 | ------------- | ----------------------------------------------- | ------------------------------------- |
