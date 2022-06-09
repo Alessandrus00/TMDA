@@ -1,6 +1,6 @@
 <h1 align="center">TMDA (Transportation Mode Detector and Analyzer)</h1>
 <p>Real-time transportation mode detector and analyzer trained on 5 classes (bus, car, train, still, walking) to recognize human activity, based solely on two sensors coming from the user's smartphone: <b>accelerometer</b> and <b>gyroscope</b>.<br><br>
-Predictions accuracy using this trained model is about <b>72%</b>, meaning that 72 out of 100 times it will detect the correct transportation mode. </p>
+Prediction accuracy using this detector is about <b>72%</b>, meaning that 72 out of 100 times it will detect the correct transportation mode. </p>
 
 # 🚀 Quickstart
 ```shell
