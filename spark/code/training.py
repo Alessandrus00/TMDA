@@ -1,11 +1,10 @@
-from random import seed
 import pandas as pd
 from os.path import exists
 from os import listdir
 import pyspark.sql.types as tp
 from pyspark.sql import SparkSession
-from pyspark.ml.feature import VectorAssembler, StandardScaler
-from pyspark.ml.classification import RandomForestClassifier, LinearSVC, NaiveBayes, LogisticRegression, OneVsRest, GBTClassifier
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.classification import OneVsRest, GBTClassifier
 from pyspark.ml.feature import StringIndexer
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 from pyspark.ml import Pipeline

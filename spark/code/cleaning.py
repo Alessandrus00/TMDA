@@ -1,7 +1,7 @@
 import math
 from pyspark.sql import SparkSession
 import pyspark.sql.types as tp
-from pyspark.sql.functions import from_json, col, to_timestamp, session_window, udf, max, min, mean, stddev, first
+from pyspark.sql.functions import from_json, col, session_window, udf, max, min, mean, stddev, first
 
 
 # spark app name

@@ -1,5 +1,3 @@
-import imp
-from webbrowser import get
 from pyspark.sql import SparkSession
 from pyspark.conf import SparkConf
 from pyspark import SparkContext
