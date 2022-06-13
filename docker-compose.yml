@@ -6,7 +6,7 @@ services:
   #-------------------------------#
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:8.2.2
+    image: docker.elastic.co/logstash/logstash:8.2.0
     container_name: logstash_green
     volumes: 
         - ./logstash/pipeline/:/usr/share/logstash/pipeline/
@@ -79,7 +79,7 @@ services:
   #-------------------------------#
 
   init-kafka:
-    image: confluentinc/cp-kafka:6.1.1
+    image: confluentinc/cp-kafka:7.0.1
     depends_on:
       - broker
       - zookeeper
