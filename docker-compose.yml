@@ -108,6 +108,7 @@ services:
       build: 
           context: spark
       container_name: spark-training
+      image: tmda_spark
       environment: 
         - "SPARK_ACTION=training"
       volumes: 
@@ -125,6 +126,7 @@ services:
       build: 
           context: spark
       container_name: spark-cleaning
+      image: tmda_spark
       depends_on:
         - init-kafka
       environment: 
@@ -142,6 +144,7 @@ services:
       build: 
           context: spark
       container_name: spark-streaming
+      image: tmda_spark
       depends_on:
         - init-kafka
         - elasticsearch
