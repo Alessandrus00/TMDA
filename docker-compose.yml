@@ -1,4 +1,4 @@
-version: '3'
+version: '3.7'
 services:
 
   #-------------------------------#
@@ -13,9 +13,8 @@ services:
         - ./dataset/:/usr/share/logstash/logs/
     depends_on:
         - init-kafka
-        - spark-training
-    environment: 
-        - "LS_JAVA_OPTS=-Xms1g -Xmx1g"
+    environment:
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
     networks: 
       - tmda
 
@@ -29,6 +28,7 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEPER_HEAP_OPTS: -Xmx512m -Xmx512m
     networks:
       - tmda
 
@@ -51,6 +51,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_HEAP_OPTS: -Xmx512m -Xmx512m
     networks:
       - tmda
 
@@ -71,6 +72,7 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker:29092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_HEAP_OPTS: -Xmx512m -Xmx512m
     networks:
       - tmda
 
@@ -97,6 +99,10 @@ services:
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server broker:29092 --list
       "
+    environment:
+      KAFKA_BROKER_ID: ignored
+      KAFKA_ZOOKEEPER_CONNECT: ignored
+      KAFKA_HEAP_OPTS: -Xmx512m -Xmx512m
     networks:
       - tmda
     
@@ -104,19 +110,19 @@ services:
   # spark (training)              #
   #-------------------------------#
 
-  spark-training:
-      build: 
-          context: spark
-      container_name: spark-training
-      image: tmda_spark
-      environment: 
-        - "SPARK_ACTION=training"
-      volumes: 
-        - ./dataset/training:/opt/tap/spark/dataset
-        - ./spark/code/training.py:/opt/tap/training.py
-        - ./spark/model:/opt/tap/model
-      networks:
-        - tmda
+  #spark-training:
+  #    build: 
+  #        context: spark
+  #    container_name: spark-training
+  #    image: tmda_spark
+  #    environment: 
+  #      - "SPARK_ACTION=training"
+  #    volumes: 
+  #      - ./dataset/training:/opt/tap/spark/dataset
+  #      - ./spark/code/training.py:/opt/tap/training.py
+  #      - ./spark/model:/opt/tap/model
+  #    networks:
+  #      - tmda
   
   #-------------------------------#
   # spark (cleaning)              #
@@ -133,6 +139,14 @@ services:
         - "SPARK_ACTION=cleaning"
       volumes: 
         - ./spark/code/cleaning.py:/opt/tap/cleaning.py
+      deploy:
+        resources:
+          limits:
+            cpus: '1.0'
+            memory: 1g
+          reservations:
+            cpus: '0.5'
+            memory: 500m
       networks:
         - tmda
 
@@ -154,6 +168,14 @@ services:
       volumes: 
         - ./spark/code/streaming.py:/opt/tap/streaming.py
         - ./spark/model:/opt/tap/model
+      deploy:
+        resources:
+          limits:
+            cpus: '1.0'
+            memory: 1g
+          reservations:
+            cpus: '0.5'
+            memory: 500m
       networks:
         - tmda
   
@@ -167,6 +189,14 @@ services:
       container_name: zip-extractor
       volumes: 
         - ./dataset/:/usr/src/app
+      deploy:
+        resources:
+          limits:
+            cpus: '0.2'
+            memory: 500m
+          reservations:
+            cpus: '0.1'
+            memory: 250m
       networks:
         - tmda
   
@@ -180,18 +210,17 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.2.0
     ports:
       - "9200:9200"
-      - "9300:9300"      
+      - "9300:9300"
+    restart: on-failure      
     environment:
       - xpack.security.enabled=false
       - discovery.type=single-node
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - cluster.routing.allocation.disk.threshold_enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
     ulimits:
       memlock:
         soft: -1
         hard: -1
-    # mem_limit: 1g
     networks: 
     - tmda
 
