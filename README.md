@@ -25,7 +25,7 @@ $ docker-compose up -d
 
 4. When `sensors.csv` contains new entries, a container named **logstash**, running the data ingestor Logstash, reads those entries and writes them to sensors-raw topic.
 
-5. Once data are stored inside sensors-raw topic, a container running Spark, named **spark-cleaning** and subscribed to the above topic, is responsible for reading, cleaning and writing the results to sensors topic.
+5. Once data are stored inside sensors-raw topic, a container running Spark, named **spark-cleaning** and subscribed to this topic, is responsible for reading, cleaning and writing the results to sensors topic.
 Cleaning mainly consists in: 
     + grouping data by user ID and session window (so that each user has a window started and ended by events themselves)
     + aggregating sensors data, in order to extract **mean**, **min**, **max** and **stddev** (standard deviation) for each sensor (excluding the ones that produce geo data).
