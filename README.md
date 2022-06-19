@@ -28,7 +28,7 @@ $ docker-compose up -d
 5. Once data are stored inside sensors-raw topic, a container running Spark, named **spark-cleaning** and subscribed to this topic, is responsible for reading, cleaning and writing the results to sensors topic.
 Cleaning mainly consists in: 
     + grouping data by user ID and session window (so that each user has a window started and ended by events themselves)
-    + aggregating sensors data, in order to extract **mean**, **min**, **max** and **stddev** (standard deviation) for each sensor (excluding the ones that produce geo data).
+    + aggregating sensors data, in order to extract the features **mean**, **min**, **max** and **stddev** (standard deviation) for each sensor (excluding the ones that produce geo data).
 
 6. Another container running Spark and called **spark-streaming** reads from sensors topic and predicts the transportation mode using the previously created model. Resulting dataframe is then sent to the data indexer Elasticsearch.
 
